@@ -15,16 +15,16 @@ decrease for C > 25.  I interpret this to mean that there is sufficient data to 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier,AdaBoostClassifier
+from sklearn.lda import LDA
+from sklearn.qda import QDA
 from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import train_test_split
 from sklearn.utils import shuffle
-
-
-#test logistic, knn, gaussian nb, random forest
 
 def load_magic_data():
     '''
@@ -59,38 +59,31 @@ def load_magic_data():
 
     return (X,Y,Ynames)
 
-
 def main():
 
     (X, Y, Ynames) = load_magic_data()
-    
-    #X,Y = shuffle(X, Y, n_samples = 100, random_state=0)
-
-    n_samples, n_features = X.shape
-    C = 2.0
-
-    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.25, random_state=None)
+    X = StandardScaler().fit_transform(X)
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.33, random_state=None)
+    C = 5.0
 
     classifiers = {'L1 logistic': LogisticRegression(C=C, penalty='l1'),
                'L2 logistic': LogisticRegression(C=C, penalty='l2'),
                'KNN': KNeighborsClassifier(n_neighbors=11),
                'NB': GaussianNB(),
-               'RF3': RandomForestClassifier(n_estimators=3),
-               'RF25': RandomForestClassifier(n_estimators=25),
-               'RF100': RandomForestClassifier(n_estimators=100)}
-
-    n_classifiers = len(classifiers)
+               'RF5': RandomForestClassifier(n_estimators=5),
+               'RF50': RandomForestClassifier(n_estimators=50),
+               'AdaBoost': AdaBoostClassifier(),
+               'LDA': LDA(),
+               'QDA': QDA()}
 
     plt.figure(figsize=(8,8))
 
+    n_classifiers = len(classifiers)
     for index, (name, clf) in enumerate(classifiers.iteritems()):
         clf.fit(Xtrain, Ytrain)
         probs = clf.predict_proba(Xtest)
-
         fpr, tpr, thresholds = roc_curve(Ytest, probs[:, 1])
         roc_auc = auc(fpr, tpr)
-
-    
         plt.plot(fpr, tpr, label='%s (area = %0.2f)' % (name, roc_auc))
 
 
