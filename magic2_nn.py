@@ -69,7 +69,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 fnn = buildNetwork(trndata.indim, 15, trndata.outdim, bias=True) 
 trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0, learningrate = 0.005, verbose=False)
 
-maxN = 1000
+maxN = 100
 stepSize = 2
 count = 0
 
@@ -99,4 +99,4 @@ print "Epoch:%4d" % trainer.totalepochs, \
       "  train accuracy: %5.2f%%" % trnresult, \
       "  test accuracy: %5.2f%%" % tstresult
 
-NetworkWriter.writeToFile(fnn, 'magic2_nn.xml')
+#NetworkWriter.writeToFile(fnn, 'magic2_nn.xml')

@@ -58,42 +58,46 @@ def load_magic_data():
 
 
 def main():
-	(X, Y, Ynames) = load_magic_data()
-	X = StandardScaler().fit_transform(X)
-	X,Y = shuffle(X, Y, n_samples=2000, random_state=None)
+    (X, Y, Ynames) = load_magic_data()
+    X = StandardScaler().fit_transform(X)
+    X,Y = shuffle(X, Y, n_samples=None, random_state=None)
 
-	N = len(Y)
+    N = len(Y)
 
-	alldata = ClassificationDataSet(inp = 10, target = 1, nb_classes=2)
+    alldata = ClassificationDataSet(inp = 10, target = 1, nb_classes=2)
 
-	for i in range(N):
-		alldata.addSample(X[i],Y[i])
+    for i in range(N):
+        alldata.addSample(X[i],Y[i])
 
-	tstdata, trndata = alldata.splitWithProportion(0.25)
+    tstdata, trndata = alldata.splitWithProportion(0.25)
 
-	trndata._convertToOneOfMany()
-	tstdata._convertToOneOfMany()
+    trndata._convertToOneOfMany()
+    tstdata._convertToOneOfMany()
 
-	print "Number of training patterns: ", len(trndata)
-	print "Input and output dimensions: ", trndata.indim, trndata.outdim
-	print "First sample (input, target, class):"
-	print trndata['input'][0], trndata['target'][0], trndata['class'][0]
+    print "Number of training patterns: ", len(trndata)
+    print "Input and output dimensions: ", trndata.indim, trndata.outdim
+    print "First sample (input, target, class):"
+    print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
-	fnn = buildNetwork(trndata.indim, 20, trndata.outdim, bias=True) 
-	trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0, learningrate = 0.005, verbose=True)
+    fnn = buildNetwork(trndata.indim, 15, trndata.outdim, bias=True) 
+    trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0, learningrate = 0.005, verbose=True)
 
-	trainer.trainUntilConvergence(maxEpochs=100)
+    trainer.trainUntilConvergence(maxEpochs=100)
 
-	trnresult = 100 - percentError(trainer.testOnClassData(), trndata['class'])
-	tstresult = 100 - percentError(trainer.testOnClassData(dataset=tstdata), tstdata['class'])
+    trnresult = 100 - percentError(trainer.testOnClassData(), trndata['class'])
+    tstresult = 100 - percentError(trainer.testOnClassData(dataset=tstdata), tstdata['class'])
 
-	print "Epoch:%4d" % trainer.totalepochs, \
-	      "  train accuracy: %5.2f%%" % trnresult, \
-	      "  test accuracy: %5.2f%%" % tstresult
+    print "Epoch:%4d" % trainer.totalepochs, \
+      "  train accuracy: %5.2f%%" % trnresult, \
+      "  test accuracy: %5.2f%%" % tstresult
 
-	plt.plot(trainer.trainingErrors)
+    plt.figure(figsize=(8,8))
+    plt.plot(trainer.trainingErrors)
+    plt.xlabel('Training Steps')
+    plt.ylabel('Training Error')
+    plt.show()
 
-	NetworkWriter.writeToFile(fnn, 'magic_nn.xml')
+    #NetworkWriter.writeToFile(fnn, 'magic_nn.xml')
 
 if __name__ == "__main__":
     main()
