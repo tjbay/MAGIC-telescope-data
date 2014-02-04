@@ -84,6 +84,8 @@ def main():
         probs = clf.predict_proba(Xtest)
         fpr, tpr, thresholds = roc_curve(Ytest, probs[:, 1])
         roc_auc = auc(fpr, tpr)
+        print 'For model', name, 'accuracy =', clf.score(Xtest,Ytest)
+
         plt.plot(fpr, tpr, label='%s (area = %0.2f)' % (name, roc_auc))
 
 

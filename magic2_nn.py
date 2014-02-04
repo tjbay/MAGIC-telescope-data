@@ -1,25 +1,12 @@
-'''
-T.J. Bay - Training a neural network MAGIC telescope dataset using PyBrain
-
-Discussion:  I decided to use the simulated MAGIC telescope dataset:
-(http://archive.ics.uci.edu/ml/datasets/MAGIC+Gamma+Telescope).  
-The dataset consists of 10 continuous features for 19020 observations and a label that is 
-either 'g' for a gamma-ray event or an 'h' for a hadron event.  The telescope is
-looking for gamma-ray events, so I labelled 'g' events as 1 and 'h' events as 0.
-
-'''
-
 import numpy as np
 import pandas as pd
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-from pybrain.datasets.supervised import SupervisedDataSet
-
 from pybrain.datasets import ClassificationDataSet
 from pybrain.utilities import percentError
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
+import matplotlib.pyplot as plt
 
 from pybrain.tools.customxml.networkwriter import NetworkWriter
 
@@ -57,51 +44,59 @@ def load_magic_data():
     return (X,Y,Ynames)
 
 
-def main():
-	(X, Y, Ynames) = load_magic_data()
-	X = StandardScaler().fit_transform(X)
-	X,Y = shuffle(X, Y, n_samples=2000, random_state=None)
+(X, Y, Ynames) = load_magic_data()
+X,Y = shuffle(X, Y, n_samples=None, random_state=None)
+X = StandardScaler().fit_transform(X)
 
-	N = len(Y)
+N = len(Y)
+alldata = ClassificationDataSet(inp = 10, target = 1, nb_classes=2)
 
-	alldata = ClassificationDataSet(inp = 10, target = 1, nb_classes=2)
 
-	for i in range(N):
+for i in range(N):
 		alldata.addSample(X[i],Y[i])
 
-	tstdata, trndata = alldata.splitWithProportion(0.25)
+tstdata, trndata = alldata.splitWithProportion(0.25)
 
-	trndata._convertToOneOfMany()
-	tstdata._convertToOneOfMany()
+trndata._convertToOneOfMany()
+tstdata._convertToOneOfMany()
 
-	print "Number of training patterns: ", len(trndata)
-	print "Input and output dimensions: ", trndata.indim, trndata.outdim
-	print "First sample (input, target, class):"
-	print trndata['input'][0], trndata['target'][0], trndata['class'][0]
+print "Number of training patterns: ", len(trndata)
+print "Number of test patterns: ", len(tstdata)
+print "Input and output dimensions: ", trndata.indim, trndata.outdim
+print "First sample (input, target, class):"
+print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
-	fnn = buildNetwork(trndata.indim, 20, trndata.outdim, bias=True) 
-	trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0, learningrate = 0.005, verbose=True)
+fnn = buildNetwork(trndata.indim, 15, trndata.outdim, bias=True) 
+trainer = BackpropTrainer(fnn, dataset=trndata, momentum=0, learningrate = 0.005, verbose=False)
 
-	trainer.trainUntilConvergence(maxEpochs=100)
+maxN = 1000
+stepSize = 2
+count = 0
 
-	trnresult = 100 - percentError(trainer.testOnClassData(), trndata['class'])
-	tstresult = 100 - percentError(trainer.testOnClassData(dataset=tstdata), tstdata['class'])
-
-	print "Epoch:%4d" % trainer.totalepochs, \
-	      "  train accuracy: %5.2f%%" % trnresult, \
-	      "  test accuracy: %5.2f%%" % tstresult
-
-	plt.plot(trainer.trainingErrors)
-
-	NetworkWriter.writeToFile(fnn, 'magic_nn.xml')
-
-if __name__ == "__main__":
-    main()
+trainAcc = [percentError(trainer.testOnClassData(), trndata['class'])]
+epochs = [0]
 
 
+while count < maxN:
+	trainer.trainEpochs(stepSize)
+	count += stepSize
+	print "Epochs trained =", count
+	
+	epochs.append(count) 
+	trainAcc.append(100 - percentError(trainer.testOnClassData(), trndata['class']))
+
+	plt.figure(figsize=(8,8))
+	plt.plot(epochs, trainAcc)
+	plt.xlabel('Training Steps')
+	plt.ylabel('Training Set Percent Accuracy')
+	plt.show()
 
 
+trnresult = 100 - percentError(trainer.testOnClassData(), trndata['class'])
+tstresult = 100 - percentError(trainer.testOnClassData(dataset=tstdata), tstdata['class'])
 
+print "Epoch:%4d" % trainer.totalepochs, \
+      "  train accuracy: %5.2f%%" % trnresult, \
+      "  test accuracy: %5.2f%%" % tstresult
 
-
-
+NetworkWriter.writeToFile(fnn, 'magic2_nn.xml')
